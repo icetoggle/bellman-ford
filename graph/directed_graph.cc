@@ -6,6 +6,7 @@
 #include "directed_graph.h"
 #include <sstream>  
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -143,10 +144,27 @@ void Graph::add_edge( GNode *& origin, GNode *& destination, double weight )
 	origin->edges.push_back( *temp );
 }
 
+bool Graph::generate_path( std::vector<std::vector<std::string> >& path, std::vector<int> & parents)
+{
+	for( unsigned long int i = 0; i < nodes.size(); ++i ){
+		vector<string> temp;
+		int current = i;
+		while( current != -1 ){
+			temp.push_back( nodes.at(current).name );
+			current = parents.at(current);
+		}
+		std::reverse( temp.begin(), temp.end() );
+		// temp.push_back( nodes.at(current).name );
+		path.push_back( temp );
+	}
+	return true;
+}
+
 bool Graph::bellman_ford( GNode *& origin, std::vector<std::vector<std::string> >& path )
 {
-	vector<double> distances, parents;
-	const double infinity = 99999999;
+	vector<double> distances;
+	vector<int> parents;
+	const double infinity = 99999999999999;
 
 	// Initilize
 	for( unsigned long int i = 0; i < nodes.size(); ++i ){
@@ -156,7 +174,7 @@ bool Graph::bellman_ford( GNode *& origin, std::vector<std::vector<std::string> 
 			distances.push_back( infinity );
 		}
 
-		parents.push_back( 0.0 );
+		parents.push_back( -1 );
 	}
 
 	// Relaxe Edges
@@ -196,21 +214,13 @@ bool Graph::bellman_ford( GNode *& origin, std::vector<std::vector<std::string> 
 	}
 
 	if(!negative_weight){
-		
-		stringstream weight;
-		vector<std::string> key_value;
-		
+		generate_path(path, parents);
 		for(unsigned long int i = 0; i < nodes.size(); ++i){
-			
-			key_value.push_back(nodes.at(i).name);
+			auto &key_value = path.at(i);
+			stringstream weight;
 			// convery doulbe to string
 			weight << distances.at(i);
 			key_value.push_back(weight.str());
-			path.push_back(key_value);
-
-			key_value.clear();
-			weight.clear();
-			weight.str(std::string());
 		}
 	}
 

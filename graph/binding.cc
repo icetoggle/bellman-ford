@@ -1,158 +1,180 @@
-// #ifndef BUILDING_NODE_EXTENSION
-#define BUILDING_NODE_EXTENSION
 
 #include "directed_graph.h"
 
 using namespace v8;
 
-void Graph::Init(Handle<Object> target) {
+void Graph::Init(Local<Object> exports) {
   // Prepare constructor template
-  Local<FunctionTemplate> tpl = FunctionTemplate::New(New); // this calls the New member function
-  tpl->SetClassName(String::NewSymbol("Graph"));
+  Isolate* isolate = exports->GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ObjectTemplate> addon_data_tpl = ObjectTemplate::New(isolate);
+  addon_data_tpl->SetInternalFieldCount(1);
+  Local<Object> addon_data = addon_data_tpl->NewInstance(context).ToLocalChecked();
+
+  Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New, addon_data); // this calls the New member function
+  tpl->SetClassName(String::NewFromUtf8(isolate, "Graph").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   // Prototype
   
-  tpl->PrototypeTemplate()->Set(String::NewSymbol("add_node"),
-      FunctionTemplate::New(add_node)->GetFunction());
+  NODE_SET_PROTOTYPE_METHOD(tpl, "add_node", add_node);
+  // tpl->PrototypeTemplate()->Set(String::NewSymbol("add_node"),
+  //     FunctionTemplate::New(add_node)->GetFunction());
   
-  tpl->PrototypeTemplate()->Set(String::NewSymbol("add_edge"),
-  	  FunctionTemplate::New(add_edge)->GetFunction());
+  NODE_SET_PROTOTYPE_METHOD(tpl, "add_edge", add_edge);
+  // tpl->PrototypeTemplate()->Set(String::NewSymbol("add_edge"),
+  // 	  FunctionTemplate::New(add_edge)->GetFunction());
 
-  tpl->PrototypeTemplate()->Set(String::NewSymbol("update_edge"),
-      FunctionTemplate::New(update_edge)->GetFunction());
+  NODE_SET_PROTOTYPE_METHOD(tpl, "update_edge", update_edge);
+  // tpl->PrototypeTemplate()->Set(String::NewSymbol("update_edge"),
+  //     FunctionTemplate::New(update_edge)->GetFunction());
 
-  tpl->PrototypeTemplate()->Set(String::NewSymbol("print"),
-      FunctionTemplate::New(print)->GetFunction());
+  NODE_SET_PROTOTYPE_METHOD(tpl, "print", print);
+  // tpl->PrototypeTemplate()->Set(String::NewSymbol("print"),
+  //     FunctionTemplate::New(print)->GetFunction());
 
-  tpl->PrototypeTemplate()->Set(String::NewSymbol("trim"),
-      FunctionTemplate::New(trim)->GetFunction());
+  NODE_SET_PROTOTYPE_METHOD(tpl, "trim", trim);
+  // tpl->PrototypeTemplate()->Set(String::NewSymbol("trim"),
+  //     FunctionTemplate::New(trim)->GetFunction());
 
-  tpl->PrototypeTemplate()->Set(String::NewSymbol("bellmanford"),
-      FunctionTemplate::New(bellmanford)->GetFunction());
+  NODE_SET_PROTOTYPE_METHOD(tpl, "bellmanford", bellmanford);
+  // tpl->PrototypeTemplate()->Set(String::NewSymbol("bellmanford"),
+  //     FunctionTemplate::New(bellmanford)->GetFunction());
 
-  Persistent<Function> constructor = Persistent<Function>::New(tpl->GetFunction());
-  target->Set(String::NewSymbol("Graph"), constructor);
+  Local<Function> constructor = tpl->GetFunction(context).ToLocalChecked();
+  addon_data->SetInternalField(0, constructor);
+  exports->Set(context, String::NewFromUtf8(isolate, "Graph").ToLocalChecked(), constructor).FromJust();
+  // Persistent<Function> constructor = Persistent<Function>::New(tpl->GetFunction());
+  // target->Set(String::NewSymbol("Graph"), constructor);
 }
 // this is the "New member function"
-Handle<Value> Graph::New(const Arguments& args) {
-  HandleScope scope;
-
-  Graph* obj = new Graph();
-  obj->Wrap(args.This());
-  return args.This();
+void Graph::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  if(args.IsConstructCall()) {
+    // Invoked as constructor: `new MyObject(...)`
+    Graph* obj = new Graph();
+    obj->Wrap(args.Holder());
+    args.GetReturnValue().Set(args.Holder());
+  } else {
+    // Invoked as plain function `MyObject(...)`, turn into construct call.
+    const int argc = 0;
+    Local<Value> argv[0] = { };
+    Local<Function> cons =
+        args.Data().As<Object>()->GetInternalField(0).As<Function>();
+    Local<Object> result =
+        cons->NewInstance(context, argc, argv).ToLocalChecked();
+    args.GetReturnValue().Set(result);
+  }
 }
 
-Handle<Value> Graph::add_node(const v8::Arguments& args)
+void Graph::add_node(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  HandleScope scope;
+  Isolate* isolate = args.GetIsolate();
 
   if (args.Length() != 1 ) {
-    ThrowException(Exception::TypeError(String::New("add_node: wrong number of arguments")));
-    return scope.Close(Undefined());
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "add_node: wrong number of arguments").ToLocalChecked()));
+    return;
   }
 
-  Graph* graph = ObjectWrap::Unwrap<Graph>(args.This());
-
-  v8::String::Utf8Value param(args[0]->ToString());
-  std::string name = std::string(*param);  
+  Graph* graph = ObjectWrap::Unwrap<Graph>(args.Holder());
+  // Local<Context> context = isolate->GetCurrentContext();
+  v8::String::Utf8Value param1(isolate, args[0]);
+  std::string name(*param1);
 
   graph->add_node( name );
-  return scope.Close(Boolean::New(true));
+  args.GetReturnValue().Set(Boolean::New(isolate, true));
 }
 
-Handle<Value> Graph::add_edge(const v8::Arguments& args)
+void Graph::add_edge(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  HandleScope scope;
+  Isolate* isolate = args.GetIsolate();
 
-  Graph* graph = ObjectWrap::Unwrap<Graph>(args.This());
+  Graph* graph = ObjectWrap::Unwrap<Graph>(args.Holder());
+  Local<Context> context = isolate->GetCurrentContext();
 
   if( args.Length() == 3 ){
-    v8::String::Utf8Value param1(args[0]->ToString());
-    v8::String::Utf8Value param2(args[1]->ToString());
+    v8::String::Utf8Value param1(isolate, args[0]);
+    v8::String::Utf8Value param2(isolate, args[1]);
 
     std::string from = std::string(*param1);
     std::string to = std::string(*param2);
-    double weight = args[2]->NumberValue();
-
-    graph->add_edge( from, to, weight );
-    return scope.Close(Boolean::New(true));
+    double weight = args[2]->NumberValue(context).FromJust();
+    graph->add_edge( from, to, weight );  
+    args.GetReturnValue().Set(Boolean::New(isolate, true));
 
   } else {
-    ThrowException(Exception::TypeError(String::New("add_edge: wrong number of arguments")));
-    return scope.Close(Undefined()); 
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "add_edge: wrong number of arguments").ToLocalChecked()));
   }
 }
 
-Handle<Value> Graph::update_edge(const v8::Arguments& args)
+void Graph::update_edge(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  HandleScope scope;
+  Isolate* isolate = args.GetIsolate();
 
-  Graph* graph = ObjectWrap::Unwrap<Graph>(args.This());
+  Graph* graph = ObjectWrap::Unwrap<Graph>(args.Holder());
+  Local<Context> context = isolate->GetCurrentContext();
   if( args.Length() == 3 ){
-    v8::String::Utf8Value param1(args[0]->ToString());
-    v8::String::Utf8Value param2(args[1]->ToString());
+    v8::String::Utf8Value param1(isolate, args[0]);
+    v8::String::Utf8Value param2(isolate, args[1]);
 
     std::string from = std::string(*param1);
     std::string to = std::string(*param2);
-    double weight = args[2]->NumberValue();
+    double weight = args[2]->NumberValue(context).FromJust();
 
     graph->update_edge( from, to, weight );
-    return scope.Close(Boolean::New(true));
+    args.GetReturnValue().Set(Boolean::New(isolate, true));
 
   } else {
-    ThrowException(Exception::TypeError(String::New("update_edge: wrong number of arguments")));
-    return scope.Close(Undefined()); 
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "update_edge: wrong number of arguments").ToLocalChecked()));
   }
 }
 
-Handle<Value> Graph::print(const v8::Arguments& args)
+void Graph::print(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  HandleScope scope;
+  Isolate* isolate = args.GetIsolate();
 
-  Graph* graph = ObjectWrap::Unwrap<Graph>(args.This());
+  Graph* graph = ObjectWrap::Unwrap<Graph>(args.Holder());
+  // Local<Context> context = isolate->GetCurrentContext();
   graph->print();
-
-  return scope.Close(Boolean::New(true));
+  args.GetReturnValue().Set(Boolean::New(isolate, true));
 }
 
-Handle<Value> Graph::trim(const v8::Arguments& args)
+void Graph::trim(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  HandleScope scope;
+  Isolate* isolate = args.GetIsolate();
 
-  Graph* graph = ObjectWrap::Unwrap<Graph>(args.This());
+  Graph* graph = ObjectWrap::Unwrap<Graph>(args.Holder());
+  // Local<Context> context = isolate->GetCurrentContext();
   graph->trim();
-
-  return scope.Close(Boolean::New(true));
+  args.GetReturnValue().Set(Boolean::New(isolate, true));
 }
 
-Handle<Value> Graph::bellmanford(const v8::Arguments& args)
+void Graph::bellmanford(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  HandleScope scope;
-  std::vector<std::vector<std::string> > path;
+  Isolate* isolate = args.GetIsolate();
+
+  Graph* graph = ObjectWrap::Unwrap<Graph>(args.Holder());
+  Local<Context> context = isolate->GetCurrentContext();
 
   if( args.Length() != 1 ) {
-    ThrowException(Exception::TypeError(String::New("bellmanford(source_node): wrong number of arguments")));
-    return scope.Close(Undefined()); 
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "bellmanford(source_node): wrong number of arguments").ToLocalChecked()));
+    return;
   }
-  Graph* graph = ObjectWrap::Unwrap<Graph>(args.This());
-  v8::String::Utf8Value param1(args[0]->ToString());
+  v8::String::Utf8Value param1(isolate, args[0]);
   std::string source = std::string(*param1);
-
+  std::vector<std::vector<std::string> > path;
   graph->bellman_ford(source, path);
 
-  Handle<Array> result = Array::New(path.size());
+  Local<Array> result = Array::New(isolate, path.size());
   
   for(unsigned long int i = 0; i < path.size(); ++i){
-    Handle<Array> keyvalue = Array::New(2);
-
-    keyvalue->Set(0, String::New(path.at(i).at(0).c_str()));
-    keyvalue->Set(1, String::New(path.at(i).at(1).c_str()));
-
-    result->Set(i, keyvalue);
+    Local<Array> keyvalue = Array::New(isolate, path[i].size());
+    for(unsigned long int j = 0; j < path[i].size(); ++j){
+      keyvalue->Set(context, j, String::NewFromUtf8(isolate, path[i][j].c_str()).ToLocalChecked());
+    }
+    result->Set(context, i, keyvalue);
   }
-
-  return scope.Close( result );
-  
+  args.GetReturnValue().Set(result);
 }
 
 // #endif

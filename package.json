@@ -18,7 +18,7 @@
   ],
   "author": "Gabriel Ferrin <garf11235813@gmail.com>",
   "dependencies": {
-    "node-gyp": "~0.9.6"
+    "node-gyp": "~9.3.0"
   },
   "repository": {
     "type": "git",
