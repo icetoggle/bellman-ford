@@ -209,6 +209,7 @@ bool Graph::bellman_ford( GNode *& origin, std::vector<std::vector<std::string> 
 			// If distances[u] + w < distances[v]
 			if( distances.at( tempNode->key ) + temp->weight < distances.at( temp->node->key ) && distances.at( tempNode->key ) != infinity ){
 				negative_weight = true; 
+				printf("Negative weight cycle detected %s %s\n", tempNode->name.c_str(), temp->node->name.c_str());
 			}
 		}
 	}
