@@ -10,7 +10,7 @@ graph.add_node("e");
 graph.add_node("c");
 
 graph.add_edge("a", "b", 0.1);
-graph.add_edge("b", "a", -0.09);
+graph.add_edge("b", "a", -0.12);
 // graph.add_edge("a", "c", 0.9);
 // graph.add_edge("c", "e", -0.1);
 // graph.add_edge("e", "c", 0.2);

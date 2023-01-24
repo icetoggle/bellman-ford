@@ -149,12 +149,18 @@ bool Graph::generate_path( std::vector<std::vector<std::string> >& path, std::ve
 	for( unsigned long int i = 0; i < nodes.size(); ++i ){
 		vector<string> temp;
 		int current = i;
-		while( current != -1 ){
+		int t = 20;
+		while( current != -1 && t--){
 			temp.push_back( nodes.at(current).name );
 			current = parents.at(current);
 		}
 		std::reverse( temp.begin(), temp.end() );
 		// temp.push_back( nodes.at(current).name );
+		if(t < 0)
+		{
+			temp.push_back("...");
+		}
+	
 		path.push_back( temp );
 	}
 	return true;
@@ -209,12 +215,11 @@ bool Graph::bellman_ford( GNode *& origin, std::vector<std::vector<std::string> 
 			// If distances[u] + w < distances[v]
 			if( distances.at( tempNode->key ) + temp->weight < distances.at( temp->node->key ) && distances.at( tempNode->key ) != infinity ){
 				negative_weight = true; 
-				printf("Negative weight cycle detected %s %s %f %f %f\n", tempNode->name.c_str(), temp->node->name.c_str(), temp->weight, distances.at( tempNode->key ), distances.at( temp->node->key ));
 			}
 		}
 	}
 
-	if(!negative_weight){
+	// if(!negative_weight){
 		generate_path(path, parents);
 		for(unsigned long int i = 0; i < nodes.size(); ++i){
 			auto &key_value = path.at(i);
@@ -223,7 +228,7 @@ bool Graph::bellman_ford( GNode *& origin, std::vector<std::vector<std::string> 
 			weight << distances.at(i);
 			key_value.push_back(weight.str());
 		}
-	}
+	// }
 
 	return negative_weight;
 	
