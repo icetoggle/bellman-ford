@@ -10,12 +10,11 @@
 
 using namespace std;
 
-Graph::Graph() : source( NULL ) {}
+Graph::Graph()   {}
 
 Graph::Graph( string & name )
 {
-	source = new GNode( name, nodes.size() );
-	nodes.push_back( *source );
+	nodes.push_back( GNode( name, nodes.size() ) );
 }
 
 Graph::~Graph() 
@@ -29,8 +28,7 @@ Graph::~Graph()
 void Graph::add_node( string & name )
 {
 	if( !search(name) ){
-		GNode *temp = new GNode( name, nodes.size() );
-		nodes.push_back( *temp );	
+		nodes.push_back( GNode( name, nodes.size() ) );	
 	}
 }
 
@@ -140,8 +138,7 @@ bool Graph::bellman_ford( std::string & name, std::vector<std::vector<std::strin
 
 void Graph::add_edge( GNode *& origin, GNode *& destination, double weight )
 {
-	GEdge *temp = new GEdge( weight, destination );
-	origin->edges.push_back( *temp );
+	origin->edges.push_back( GEdge( weight, destination ) );
 }
 
 bool Graph::generate_path( std::vector<std::vector<std::string> >& path, std::vector<int> & parents)

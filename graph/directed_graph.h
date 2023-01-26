@@ -53,8 +53,6 @@ private:
 	};
 
 	/* Variables */ 
-
-	GNode *source;
 	std::vector<GNode> nodes;
 	
 	/* V8 binding functions */
